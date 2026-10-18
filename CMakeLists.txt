@@ -27,5 +27,5 @@ target_link_libraries(fm7_machine_tests PRIVATE fm7core)
 add_test(NAME fm7_machine_tests COMMAND fm7_machine_tests)
 
 add_executable(fm7_scheduler_tests tests/fm7_scheduler_tests.cpp)
-target_include_directories(fm7_scheduler_tests PRIVATE src)
+target_link_libraries(fm7_scheduler_tests PRIVATE fm7core)
 add_test(NAME fm7_scheduler_tests COMMAND fm7_scheduler_tests)
