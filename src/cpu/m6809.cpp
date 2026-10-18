@@ -166,7 +166,7 @@ bool M6809::step() {
     case 0x3F: halted_ = true; return false;
     case 0x4F:
         regs_.a = 0;
-        regs_.cc = static_cast<std::uint8_t>((regs_.cc & ~(Negative | Overflow | Zero)) | Zero);
+        regs_.cc = static_cast<std::uint8_t>((regs_.cc & ~(Negative | Overflow | Zero | Carry)) | Zero);
         cycles_ += 2; return true;
     case 0x5F:
         regs_.b = 0;
