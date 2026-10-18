@@ -164,6 +164,70 @@ bool M6809::step() {
     }
     case 0x39: regs_.pc = pull16(regs_.s); cycles_ += 5; return true;
     case 0x3F: halted_ = true; return false;
+    case 0x40: {
+        const auto lhs = regs_.a;
+        const auto result = static_cast<std::uint16_t>(0u - lhs);
+        regs_.a = static_cast<std::uint8_t>(result);
+        setSubFlags8(0, lhs, result);
+        cycles_ += 2; return true;
+    }
+    case 0x43:
+        regs_.a = static_cast<std::uint8_t>(~regs_.a);
+        setNZ8(regs_.a);
+        regs_.cc = static_cast<std::uint8_t>((regs_.cc & ~Overflow) | Carry);
+        cycles_ += 2; return true;
+    case 0x4A: {
+        const auto old = regs_.a;
+        regs_.a = static_cast<std::uint8_t>(old - 1);
+        setNZ8(regs_.a);
+        regs_.cc = static_cast<std::uint8_t>(regs_.cc & ~Overflow);
+        if (old == 0x80) regs_.cc |= Overflow;
+        cycles_ += 2; return true;
+    }
+    case 0x4C: {
+        const auto old = regs_.a;
+        regs_.a = static_cast<std::uint8_t>(old + 1);
+        setNZ8(regs_.a);
+        regs_.cc = static_cast<std::uint8_t>(regs_.cc & ~Overflow);
+        if (old == 0x7F) regs_.cc |= Overflow;
+        cycles_ += 2; return true;
+    }
+    case 0x4D:
+        setNZ8(regs_.a);
+        regs_.cc = static_cast<std::uint8_t>(regs_.cc & ~Overflow);
+        cycles_ += 2; return true;
+    case 0x50: {
+        const auto lhs = regs_.b;
+        const auto result = static_cast<std::uint16_t>(0u - lhs);
+        regs_.b = static_cast<std::uint8_t>(result);
+        setSubFlags8(0, lhs, result);
+        cycles_ += 2; return true;
+    }
+    case 0x53:
+        regs_.b = static_cast<std::uint8_t>(~regs_.b);
+        setNZ8(regs_.b);
+        regs_.cc = static_cast<std::uint8_t>((regs_.cc & ~Overflow) | Carry);
+        cycles_ += 2; return true;
+    case 0x5A: {
+        const auto old = regs_.b;
+        regs_.b = static_cast<std::uint8_t>(old - 1);
+        setNZ8(regs_.b);
+        regs_.cc = static_cast<std::uint8_t>(regs_.cc & ~Overflow);
+        if (old == 0x80) regs_.cc |= Overflow;
+        cycles_ += 2; return true;
+    }
+    case 0x5C: {
+        const auto old = regs_.b;
+        regs_.b = static_cast<std::uint8_t>(old + 1);
+        setNZ8(regs_.b);
+        regs_.cc = static_cast<std::uint8_t>(regs_.cc & ~Overflow);
+        if (old == 0x7F) regs_.cc |= Overflow;
+        cycles_ += 2; return true;
+    }
+    case 0x5D:
+        setNZ8(regs_.b);
+        regs_.cc = static_cast<std::uint8_t>(regs_.cc & ~Overflow);
+        cycles_ += 2; return true;
     case 0x4F:
         regs_.a = 0;
         regs_.cc = static_cast<std::uint8_t>((regs_.cc & ~(Negative | Overflow | Zero | Carry)) | Zero);
