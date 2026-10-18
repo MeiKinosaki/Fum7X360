@@ -227,5 +227,63 @@ int main() {
                 fm7::M6809::FirqMask));
     }
 
+    {
+        // Unary accumulator instructions: NEG, COM, INC, DEC and TST.
+        fm7::MemoryBus bus;
+        fm7::M6809 cpu(bus);
+        auto& mem = bus.rawMemory();
+        mem[0x0900] = 0x4C; // INCA: $7F -> $80, signed overflow
+        mem[0x0901] = 0x4A; // DECA: $80 -> $7F, signed overflow
+        mem[0x0902] = 0x43; // COMA: $7F -> $80, carry set
+        mem[0x0903] = 0x4D; // TSTA: preserve carry
+        mem[0x0904] = 0x40; // NEGA: $80 -> $80, V and C set
+        mem[0x0905] = 0x5C; // INCB: $7F -> $80
+        mem[0x0906] = 0x5A; // DECB: $80 -> $7F
+        mem[0x0907] = 0x53; // COMB
+        mem[0x0908] = 0x5D; // TSTB
+        mem[0x0909] = 0x50; // NEGB
+        cpu.reset(0x0900);
+        cpu.registers().a = 0x7F;
+        cpu.registers().b = 0x7F;
+        cpu.registers().cc = fm7::M6809::InterruptMask;
+        assert(cpu.step());
+        assert(cpu.registers().a == 0x80);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) != 0);
+        assert((cpu.registers().cc & fm7::M6809::Negative) != 0);
+        assert((cpu.registers().cc & fm7::M6809::Carry) == 0);
+        assert(cpu.step());
+        assert(cpu.registers().a == 0x7F);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) != 0);
+        assert(cpu.step());
+        assert(cpu.registers().a == 0x80);
+        assert((cpu.registers().cc & fm7::M6809::Carry) != 0);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) == 0);
+        assert(cpu.step());
+        assert((cpu.registers().cc & fm7::M6809::Carry) != 0);
+        assert(cpu.step());
+        assert(cpu.registers().a == 0x80);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) != 0);
+        assert((cpu.registers().cc & fm7::M6809::Carry) != 0);
+        assert(cpu.step());
+        assert(cpu.registers().b == 0x80);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) != 0);
+        assert(cpu.step());
+        assert(cpu.registers().b == 0x7F);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) != 0);
+        assert(cpu.step());
+        assert(cpu.registers().b == 0x80);
+        assert((cpu.registers().cc & fm7::M6809::Carry) != 0);
+        assert(cpu.step());
+        assert((cpu.registers().cc & fm7::M6809::Carry) != 0);
+        assert(cpu.step());
+        assert(cpu.registers().b == 0x80);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) != 0);
+        assert(cpu.step());
+        assert(cpu.registers().b == 0x80);
+        assert((cpu.registers().cc & fm7::M6809::Carry) != 0);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) != 0);
+        assert((cpu.registers().cc & fm7::M6809::InterruptMask) != 0);
+    }
+
     return 0;
 }
