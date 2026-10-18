@@ -7,7 +7,8 @@ Experimental Fujitsu FM-7 emulator project targeting Xbox 360.
 ## Current implementation
 
 - Portable C++17 core built with CMake.
-- Initial Motorola 6809 instruction subset and basic cycle accounting.
+- Initial Motorola 6809 instruction subset and basic cycle accounting, including unary accumulator operations (NEG, COM, INC, DEC and TST) and conditional-flag handling.
+- PSHS/PULS cycle accounting includes the number of transferred bytes; host tests cover the two-byte PC transfer case.
 - `MemoryInterface` abstraction for CPU byte/word memory operations, with a flat `MemoryBus` implementation.
 - `FM7Machine` main CPU memory interface and a `SubsystemMemoryView` for the subsystem address space.
 - Both CPU views map their shared-RAM windows to the same 128-byte backing array.
