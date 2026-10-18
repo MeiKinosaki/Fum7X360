@@ -174,5 +174,58 @@ int main() {
         assert((cpu.registers().cc & fm7::M6809::InterruptMask) != 0);
     }
 
+    {
+        // Test immediate arithmetic boundary cases and preservation of I/F.
+        fm7::MemoryBus bus;
+        fm7::M6809 cpu(bus);
+        auto& mem = bus.rawMemory();
+        mem[0x0700] = 0x8B; // ADDA #$01
+        mem[0x0701] = 0x01;
+        mem[0x0702] = 0x80; // SUBA #$01
+        mem[0x0703] = 0x01;
+        cpu.reset(0x0700);
+        cpu.registers().a = 0x7F;
+        cpu.registers().cc = static_cast<std::uint8_t>(
+            fm7::M6809::InterruptMask | fm7::M6809::FirqMask);
+        assert(cpu.step());
+        assert(cpu.registers().a == 0x80);
+        assert((cpu.registers().cc & fm7::M6809::Negative) != 0);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) != 0);
+        assert((cpu.registers().cc & fm7::M6809::Carry) == 0);
+        assert((cpu.registers().cc & (fm7::M6809::InterruptMask |
+                                      fm7::M6809::FirqMask)) ==
+               (fm7::M6809::InterruptMask | fm7::M6809::FirqMask));
+        assert(cpu.step());
+        assert(cpu.registers().a == 0x7F);
+        assert((cpu.registers().cc & fm7::M6809::Negative) == 0);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) != 0);
+        assert((cpu.registers().cc & (fm7::M6809::InterruptMask |
+                                      fm7::M6809::FirqMask)) ==
+               (fm7::M6809::InterruptMask | fm7::M6809::FirqMask));
+    }
+
+    {
+        // Immediate load updates N/Z and clears V without altering C/I/F.
+        fm7::MemoryBus bus;
+        fm7::M6809 cpu(bus);
+        auto& mem = bus.rawMemory();
+        mem[0x0800] = 0x86; // LDA #$00
+        mem[0x0801] = 0x00;
+        cpu.reset(0x0800);
+        cpu.registers().cc = static_cast<std::uint8_t>(
+            fm7::M6809::Carry | fm7::M6809::Overflow |
+            fm7::M6809::InterruptMask | fm7::M6809::FirqMask);
+        assert(cpu.step());
+        assert(cpu.registers().a == 0);
+        assert((cpu.registers().cc & fm7::M6809::Zero) != 0);
+        assert((cpu.registers().cc & (fm7::M6809::Negative |
+                                      fm7::M6809::Overflow)) == 0);
+        assert((cpu.registers().cc & (fm7::M6809::Carry |
+                                      fm7::M6809::InterruptMask |
+                                      fm7::M6809::FirqMask)) ==
+               (fm7::M6809::Carry | fm7::M6809::InterruptMask |
+                fm7::M6809::FirqMask));
+    }
+
     return 0;
 }
