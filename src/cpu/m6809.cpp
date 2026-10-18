@@ -140,27 +140,29 @@ bool M6809::step() {
     }
     case 0x34: {
         const auto mask = fetch8();
-        if (mask & 0x80) push16(regs_.s, regs_.pc);
-        if (mask & 0x40) push16(regs_.s, regs_.u);
-        if (mask & 0x20) push16(regs_.s, regs_.y);
-        if (mask & 0x10) push16(regs_.s, regs_.x);
-        if (mask & 0x08) push8(regs_.s, regs_.dp);
-        if (mask & 0x04) push8(regs_.s, regs_.b);
-        if (mask & 0x02) push8(regs_.s, regs_.a);
-        if (mask & 0x01) push8(regs_.s, regs_.cc);
-        cycles_ += 5; return true;
+        std::uint32_t bytes = 0;
+        if (mask & 0x80) { push16(regs_.s, regs_.pc); bytes += 2; }
+        if (mask & 0x40) { push16(regs_.s, regs_.u); bytes += 2; }
+        if (mask & 0x20) { push16(regs_.s, regs_.y); bytes += 2; }
+        if (mask & 0x10) { push16(regs_.s, regs_.x); bytes += 2; }
+        if (mask & 0x08) { push8(regs_.s, regs_.dp); ++bytes; }
+        if (mask & 0x04) { push8(regs_.s, regs_.b); ++bytes; }
+        if (mask & 0x02) { push8(regs_.s, regs_.a); ++bytes; }
+        if (mask & 0x01) { push8(regs_.s, regs_.cc); ++bytes; }
+        cycles_ += 5 + bytes; return true;
     }
     case 0x35: {
         const auto mask = fetch8();
-        if (mask & 0x01) regs_.cc = pull8(regs_.s);
-        if (mask & 0x02) regs_.a = pull8(regs_.s);
-        if (mask & 0x04) regs_.b = pull8(regs_.s);
-        if (mask & 0x08) regs_.dp = pull8(regs_.s);
-        if (mask & 0x10) regs_.x = pull16(regs_.s);
-        if (mask & 0x20) regs_.y = pull16(regs_.s);
-        if (mask & 0x40) regs_.u = pull16(regs_.s);
-        if (mask & 0x80) regs_.pc = pull16(regs_.s);
-        cycles_ += 5; return true;
+        std::uint32_t bytes = 0;
+        if (mask & 0x01) { regs_.cc = pull8(regs_.s); ++bytes; }
+        if (mask & 0x02) { regs_.a = pull8(regs_.s); ++bytes; }
+        if (mask & 0x04) { regs_.b = pull8(regs_.s); ++bytes; }
+        if (mask & 0x08) { regs_.dp = pull8(regs_.s); ++bytes; }
+        if (mask & 0x10) { regs_.x = pull16(regs_.s); bytes += 2; }
+        if (mask & 0x20) { regs_.y = pull16(regs_.s); bytes += 2; }
+        if (mask & 0x40) { regs_.u = pull16(regs_.s); bytes += 2; }
+        if (mask & 0x80) { regs_.pc = pull16(regs_.s); bytes += 2; }
+        cycles_ += 5 + bytes; return true;
     }
     case 0x39: regs_.pc = pull16(regs_.s); cycles_ += 5; return true;
     case 0x3F: halted_ = true; return false;
