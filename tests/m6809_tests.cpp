@@ -285,5 +285,28 @@ int main() {
         assert((cpu.registers().cc & fm7::M6809::InterruptMask) != 0);
     }
 
+    {
+        // PSHS/PULS consume five base cycles plus each transferred byte.
+        fm7::MemoryBus bus;
+        fm7::M6809 cpu(bus);
+        auto& mem = bus.rawMemory();
+        mem[0x0A00] = 0x34; // PSHS PC
+        mem[0x0A01] = 0x80;
+        mem[0x0A02] = 0x35; // PULS PC
+        mem[0x0A03] = 0x80;
+        cpu.reset(0x0A00);
+        cpu.registers().s = 0x4000;
+        assert(cpu.step());
+        assert(cpu.cycles() == 7);
+        assert(cpu.registers().s == 0x3FFE);
+        assert(bus.read16(0x3FFE) == 0x0A02);
+        // Execute PULS after saving the return address.
+        cpu.registers().pc = 0x0A02;
+        assert(cpu.step());
+        assert(cpu.cycles() == 14);
+        assert(cpu.registers().pc == 0x0A02);
+        assert(cpu.registers().s == 0x4000);
+    }
+
     return 0;
 }
