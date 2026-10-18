@@ -144,5 +144,35 @@ int main() {
         assert(cpu.step());
     }
 
+    {
+        // CLRA and CLRB clear N, Z, V and C appropriately while preserving
+        // unrelated condition-code bits.
+        fm7::MemoryBus bus;
+        fm7::M6809 cpu(bus);
+        auto& mem = bus.rawMemory();
+        mem[0x0600] = 0x4F; // CLRA
+        mem[0x0601] = 0x5F; // CLRB
+        cpu.reset(0x0600);
+        cpu.registers().a = 0x7F;
+        cpu.registers().b = 0x7F;
+        cpu.registers().cc = static_cast<std::uint8_t>(
+            fm7::M6809::Carry | fm7::M6809::Overflow |
+            fm7::M6809::Negative | fm7::M6809::InterruptMask);
+        assert(cpu.step());
+        assert(cpu.registers().a == 0);
+        assert((cpu.registers().cc & fm7::M6809::Zero) != 0);
+        assert((cpu.registers().cc & (fm7::M6809::Carry | fm7::M6809::Overflow |
+                                      fm7::M6809::Negative)) == 0);
+        assert((cpu.registers().cc & fm7::M6809::InterruptMask) != 0);
+        cpu.registers().cc |= fm7::M6809::Carry | fm7::M6809::Overflow |
+                              fm7::M6809::Negative;
+        assert(cpu.step());
+        assert(cpu.registers().b == 0);
+        assert((cpu.registers().cc & fm7::M6809::Zero) != 0);
+        assert((cpu.registers().cc & (fm7::M6809::Carry | fm7::M6809::Overflow |
+                                      fm7::M6809::Negative)) == 0);
+        assert((cpu.registers().cc & fm7::M6809::InterruptMask) != 0);
+    }
+
     return 0;
 }
