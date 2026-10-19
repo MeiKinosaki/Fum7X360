@@ -308,5 +308,43 @@ int main() {
         assert(cpu.registers().s == 0x4000);
     }
 
+    {
+        // Shift/rotate opcodes for both accumulators update N/Z/V/C.
+        fm7::MemoryBus bus;
+        fm7::M6809 cpu(bus);
+        auto& mem = bus.rawMemory();
+        mem[0x0B00] = 0x48; // ASLA: 0x81 -> 0x02, C=1, V=1
+        mem[0x0B01] = 0x44; // LSRA: 0x02 -> 0x01, C=0
+        mem[0x0B02] = 0x49; // ROLA
+        mem[0x0B03] = 0x47; // ASRA
+        mem[0x0B04] = 0x58; // ASLB
+        mem[0x0B05] = 0x54; // LSRB
+        mem[0x0B06] = 0x59; // ROLB
+        mem[0x0B07] = 0x57; // ASRB
+        cpu.reset(0x0B00);
+        cpu.registers().a = 0x81;
+        cpu.registers().b = 0x81;
+        assert(cpu.step());
+        assert(cpu.registers().a == 0x02);
+        assert((cpu.registers().cc & fm7::M6809::Carry) != 0);
+        assert((cpu.registers().cc & fm7::M6809::Overflow) != 0);
+        assert(cpu.step());
+        assert(cpu.registers().a == 0x01);
+        assert((cpu.registers().cc & fm7::M6809::Carry) == 0);
+        assert(cpu.step());
+        assert(cpu.registers().a == 0x02);
+        assert(cpu.step());
+        assert(cpu.registers().a == 0x01);
+        assert(cpu.step());
+        assert(cpu.registers().b == 0x02);
+        assert((cpu.registers().cc & fm7::M6809::Carry) != 0);
+        assert(cpu.step());
+        assert(cpu.registers().b == 0x01);
+        assert((cpu.registers().cc & fm7::M6809::Carry) == 0);
+        assert(cpu.step());
+        assert(cpu.step());
+        assert((cpu.registers().cc & fm7::M6809::InterruptMask) == 0);
+    }
+
     return 0;
 }
