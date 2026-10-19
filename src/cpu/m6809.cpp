@@ -230,13 +230,49 @@ bool M6809::step() {
         setNZ8(regs_.b);
         regs_.cc = static_cast<std::uint8_t>(regs_.cc & ~Overflow);
         cycles_ += 2; return true;
+    case 0x44: case 0x46: case 0x47: case 0x48: case 0x49: {
+        const auto old = regs_.a;
+        const bool oldCarry = (regs_.cc & Carry) != 0;
+        bool carry = false;
+        std::uint8_t value = old;
+        if (opcode == 0x44) { carry = (old & 1) != 0; value = static_cast<std::uint8_t>(old >> 1); }
+        else if (opcode == 0x46) { carry = (old & 1) != 0; value = static_cast<std::uint8_t>((old >> 1) | (oldCarry ? 0x80 : 0)); }
+        else if (opcode == 0x47) { carry = (old & 1) != 0; value = static_cast<std::uint8_t>((old >> 1) | (old & 0x80)); }
+        else if (opcode == 0x48) { carry = (old & 0x80) != 0; value = static_cast<std::uint8_t>(old << 1); }
+        else { carry = (old & 0x80) != 0; value = static_cast<std::uint8_t>((old << 1) | (oldCarry ? 1 : 0)); }
+        regs_.a = value;
+        regs_.cc = static_cast<std::uint8_t>(regs_.cc & ~(Negative | Zero | Overflow | Carry));
+        if (value == 0) regs_.cc |= Zero;
+        if (value & 0x80) regs_.cc |= Negative;
+        if (carry) regs_.cc |= Carry;
+        if (((value & 0x80) != 0) != carry) regs_.cc |= Overflow;
+        cycles_ += 2; return true;
+    }
+    case 0x54: case 0x56: case 0x57: case 0x58: case 0x59: {
+        const auto old = regs_.b;
+        const bool oldCarry = (regs_.cc & Carry) != 0;
+        bool carry = false;
+        std::uint8_t value = old;
+        if (opcode == 0x54) { carry = (old & 1) != 0; value = static_cast<std::uint8_t>(old >> 1); }
+        else if (opcode == 0x56) { carry = (old & 1) != 0; value = static_cast<std::uint8_t>((old >> 1) | (oldCarry ? 0x80 : 0)); }
+        else if (opcode == 0x57) { carry = (old & 1) != 0; value = static_cast<std::uint8_t>((old >> 1) | (old & 0x80)); }
+        else if (opcode == 0x58) { carry = (old & 0x80) != 0; value = static_cast<std::uint8_t>(old << 1); }
+        else { carry = (old & 0x80) != 0; value = static_cast<std::uint8_t>((old << 1) | (oldCarry ? 1 : 0)); }
+        regs_.b = value;
+        regs_.cc = static_cast<std::uint8_t>(regs_.cc & ~(Negative | Zero | Overflow | Carry));
+        if (value == 0) regs_.cc |= Zero;
+        if (value & 0x80) regs_.cc |= Negative;
+        if (carry) regs_.cc |= Carry;
+        if (((value & 0x80) != 0) != carry) regs_.cc |= Overflow;
+        cycles_ += 2; return true;
+    }
     case 0x4F:
         regs_.a = 0;
         regs_.cc = static_cast<std::uint8_t>((regs_.cc & ~(Negative | Overflow | Zero | Carry)) | Zero);
         cycles_ += 2; return true;
     case 0x5F:
         regs_.b = 0;
-        regs_.cc = static_cast<std::uint8_t>((regs_.cc & ~(Negative | Overflow | Zero)) | Zero);
+        regs_.cc = static_cast<std::uint8_t>((regs_.cc & ~(Negative | Overflow | Zero | Carry)) | Zero);
         cycles_ += 2; return true;
     case 0x7E: regs_.pc = fetch16(); cycles_ += 3; return true;
     case 0x8D: {
